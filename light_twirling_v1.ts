@@ -292,6 +292,40 @@ namespace light_twirling_v1 {
         return parseInt(colorCode, 16)
     }
 
+    let _isKeepABPressed: boolean | null = null;
+    let _buttonPressedFrom = 0;
+    basic.forever(() => {
+        if (remoteControlled) return;
+
+        // Detect long AB button pressed state for saving palette colors
+        if (input.buttonIsPressed(Button.AB) && _isKeepABPressed === null) {
+            _isKeepABPressed = true;
+            _buttonPressedFrom = control.millis();
+        } else if (_isKeepABPressed) {
+            // After keeping the state of AB button pressed for 3 seconds,
+            // save the palette colors to NVS
+            if (input.buttonIsPressed(Button.AB) && control.millis() - _buttonPressedFrom >= 3000) {
+                _savePaletteColorsToNvs();
+                music._playDefaultBackground(music.builtInPlayableMelody(Melodies.BaDing), music.PlaybackMode.InBackground);
+                basic.showIcon(IconNames.Yes);
+                basic.pause(1000)
+                basic.clearScreen();
+                _isPalettePlotted && _plotPalette(currentPalette);
+                _isColorPlotted && _plotColor(currentPaletteColor);
+                _isKeepABPressed = false;
+                // Clicking the AB button means changing the color palette
+            } else if (!input.buttonIsPressed(Button.AB)) {
+                currentPalette = (currentPalette + 1) % paletteLen;
+                basic.clearScreen();
+                _plotPalette(currentPalette);
+                _plotColor(currentPaletteColor);
+                _isKeepABPressed = false;
+            }
+        } else if (_isKeepABPressed === false && !input.buttonIsPressed(Button.AB)) {
+            _isKeepABPressed = null;
+        }
+    });
+
     // RGB (3 bytes) x # of colors x # of palettes
     function _savePaletteColorsToNvs(): void {
         for (let i = 0; i < paletteLen; i++) {
