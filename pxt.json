@@ -6,7 +6,6 @@
         "core": "*",
         "radio": "*",
         "microphone": "*",
-        "NVS (Non Volatile Storage) library": "github:kojima/microbit-nvs#v0.2.5",
         "neopixel": "github:microsoft/pxt-neopixel#v0.7.6"
     },
     "files": [
