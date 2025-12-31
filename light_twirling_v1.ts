@@ -131,9 +131,6 @@ namespace light_twirling_v1 {
     const paletteLen = Object.keys(PaletteColorColors).length
     const colorLen = PaletteColorColors[0].length
 
-
-    _loadPaletteColorsFromNVS();
-
     radio.setGroup(RadioGroup)
     radio.setTransmitPower(7)
     _turnOffLed()
@@ -291,79 +288,5 @@ namespace light_twirling_v1 {
             }
         }
         return parseInt(colorCode, 16)
-    }
-
-    let _isKeepABPressed: boolean | null = null;
-    let _buttonPressedFrom = 0;
-    basic.forever(() => {
-        if (remoteControlled) return;
-
-        // Detect long AB button pressed state for saving palette colors
-        if (input.buttonIsPressed(Button.AB) && _isKeepABPressed === null) {
-            _isKeepABPressed = true;
-            _buttonPressedFrom = control.millis();
-        } else if (_isKeepABPressed) {
-            // After keeping the state of AB button pressed for 3 seconds,
-            // save the palette colors to NVS
-            if (input.buttonIsPressed(Button.AB) && control.millis() - _buttonPressedFrom >= 3000) {
-                _savePaletteColorsToNvs();
-                music._playDefaultBackground(music.builtInPlayableMelody(Melodies.BaDing), music.PlaybackMode.InBackground);
-                basic.showIcon(IconNames.Yes);
-                basic.pause(1000)
-                basic.clearScreen();
-                _isPalettePlotted && _plotPalette(currentPalette);
-                _isColorPlotted && _plotColor(currentPaletteColor);
-                _isKeepABPressed = false;
-                // Clicking the AB button means changing the color palette
-            } else if (!input.buttonIsPressed(Button.AB)) {
-                currentPalette = (currentPalette + 1) % paletteLen;
-                basic.clearScreen();
-                _plotPalette(currentPalette);
-                _plotColor(currentPaletteColor);
-                _isKeepABPressed = false;
-            }
-        } else if (_isKeepABPressed === false && !input.buttonIsPressed(Button.AB)) {
-            _isKeepABPressed = null;
-        }
-    });
-
-    // RGB (3 bytes) x # of colors x # of palettes
-    function _savePaletteColorsToNvs(): void {
-        for (let i = 0; i < paletteLen; i++) {
-            if (PaletteColorColors[i].reduce((sum, color) => sum + color, 0) === 0) {
-                continue;
-            } else {
-                const colorBuffer: Buffer = pins.createBuffer(3 * colorLen);
-                for (let j = 0; j < colorLen; j++) {
-                    const color = PaletteColorColors[i][j];
-                    const r = (color & 0xFF0000) >> 16;
-                    const g = (color & 0x00FF00) >> 8;
-                    const b = (color & 0x0000FF);
-                    colorBuffer.setNumber(NumberFormat.UInt8BE, j * 3 + 0, r);
-                    colorBuffer.setNumber(NumberFormat.UInt8BE, j * 3 + 1, g);
-                    colorBuffer.setNumber(NumberFormat.UInt8BE, j * 3 + 2, b);
-                    //serial.writeString(`${i}${j}:${r},${g},${b}\n`);
-                }
-                nvs.putBuffer(`${i}`, colorBuffer);
-            }
-        }
-        //serial.writeString('-----\n');
-    }
-
-    function _loadPaletteColorsFromNVS(): void {
-        for (let i = 0; i < paletteLen; i++) {
-            const colors: number[] = [];
-            const colorBuffer = nvs.getBuffer(`${i}`, 3 * colorLen);
-
-            if (!colorBuffer) return;
-
-            for (let j = 0; j < colorLen; j++) {
-                const r = colorBuffer.getNumber(NumberFormat.UInt8BE, j * 3 + 0);
-                const g = colorBuffer.getNumber(NumberFormat.UInt8BE, j * 3 + 1);
-                const b = colorBuffer.getNumber(NumberFormat.UInt8BE, j * 3 + 2);
-                //serial.writeString(`${i}${j}:${r},${g},${b}\n`);
-                PaletteColorColors[i][j] = (r << 16) | (g << 8) | b;
-            }
-        }
     }
 }
