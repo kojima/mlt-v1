@@ -268,6 +268,15 @@ namespace light_twirling_v1 {
     }
 
     /*
+     * LEDの色を選択します
+     */
+    //% blockId="neo_pixel_colors_plus" block="%color"
+    //% weight=90
+    export function colors(color: NeoPixelColorsPlus): number {
+        return color
+    }
+
+    /*
      * カラーコード(#FF00FFのようなコード)を色に変換します
      */
     //% block="カラーコード%colorCode|を色に変換"
